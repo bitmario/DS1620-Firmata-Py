@@ -55,7 +55,17 @@ class DS1620
   /**
    * Set up the DS1620 in CPU mode with 1-shot mode enabled.
    */
-  void config();
+  void config(bool oneShot = true);
+
+  /**
+   * Trigger a temperature conversion in 1-shot mode, or enable continuous
+   * conversion.
+   */
+  void start_conv(bool wait = true);
+  /**
+   * Disable continuous conversion.
+   */
+  void stop_conv();
 
   /**
    * Get the current temperature reading in Celsius.
@@ -63,7 +73,7 @@ class DS1620
    * Returns:
    *   temperature in degrees Celcius.
    */
-  float temp_c();
+  float temp_c(bool start = true);
 
  private:
   const int rst_pin_;
@@ -102,16 +112,6 @@ class DS1620
    * Resets pin levels after communication.
    */
   void end_transfer();
-
-  /**
-   * Trigger a temperature conversion in 1-shot mode, or enable continuous
-   * conversion.
-   */
-  void start_conv();
-  /**
-   * Disable continuous conversion.
-   */
-  void stop_conv();
 
   /**
    * Read data from the DS1602.

@@ -95,7 +95,6 @@ byte detachedServoCount = 0;
 byte servoCount = 0;
 
 DS1620 *ds1620 = NULL;
-unsigned long ds1620_temp_init = 0;
 
 boolean isResetting = false;
 
@@ -501,12 +500,17 @@ void sysexCallback(byte command, byte argc, byte *argv)
       reportPINs[argv[2]] = 0;
       
       ds1620 = new DS1620(argv[0], argv[1], argv[2]); // clk, rst, dq
-      ds1620->config();
+      ds1620->config(false);
+      ds1620->start_conv(true);
       break;
     case DS1620_TEMP:
       if (ds1620 != NULL) {
-        ds1620_temp_init = millis();
-        ds1620->start_conv(false);
+        const int temp = (int) round(ds1620->temp_c(false) * 100);
+        Firmata.write(START_SYSEX);
+        Firmata.write(DS1620_TEMP_RESPONSE);
+        Firmata.write(temp & 0x7f); // LSB
+        Firmata.write(temp >> 7); // MSB
+        Firmata.write(END_SYSEX);
       }
       break;
     case I2C_REQUEST:
@@ -837,18 +841,6 @@ void loop()
       for (byte i = 0; i < queryIndex + 1; i++) {
         readAndReportData(query[i].addr, query[i].reg, query[i].bytes, query[i].stopTX);
       }
-    }
-
-    // check if we have initialized the DS1620 and need to return a temperature
-    if ( (ds1620_temp_init > 0) && (ds1620_temp_init + 750 < currentMillis) )
-    {
-      ds1620_temp_init = 0; // reset temperature init time
-      const int temp = (int) round(ds1620->temp_c(true) * 100);
-      Firmata.write(START_SYSEX);
-      Firmata.write(DS1620_TEMP_RESPONSE);
-      Firmata.write(temp & 0x7f); // LSB
-      Firmata.write(temp >> 7); // MSB
-      Firmata.write(END_SYSEX);
     }
   }
 
